@@ -1,0 +1,184 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.JFileChooser;
+
+public class Assignment2 {
+
+    private void findAllCombinationsRecursive(String tsoln, int startIx, int remainingTarget, ATM answer) {
+        for (int i = startIx; i < answer.denoms.length; i++) {
+            int temp = remainingTarget - answer.denoms[i];
+            String tempSoln = tsoln + "" + answer.denoms[i] + ",";
+            if (temp < 0) {
+                break;
+            }
+            if (temp == 0) {
+                // reached the answer hence quit from the loop
+                answer.allPossibleChanges.add(tempSoln);
+                break;
+            } else {
+                // target not reached, try the solution recursively with the
+                // current denomination as the start point.
+                findAllCombinationsRecursive(tempSoln, i, temp, answer);
+            }
+        }
+    }
+
+    public ATM findAllPossibleCombinations(int target, int[] denoms) {
+        ATM soln = new ATM(target, denoms);
+        String tempSoln = new String();
+        findAllCombinationsRecursive(tempSoln, 0, target, soln);
+        return soln;
+    }
+
+    public ATM findAllPossibleCombinationDynamic(int target, int[] denoms) {
+        ATM soln = new ATM(target, denoms);
+        StringBuilder sb = new StringBuilder();
+
+        // initialize the solution structure
+        
+        for (int i = 0; i < soln.OPT[0].length; i++) {
+            soln.OPT[0][i] = i;
+            soln.optimalChange[0][i] = sb.toString();
+            sb.append(denoms[0] + " ");
+        }
+
+        for (int i = 1; i < denoms.length; i++) {
+            for (int j = 0; j < target + 1; j++) {
+                int value = j;
+                int targetWithPrevDenomiation = soln.OPT[i - 1][j];
+                int ix = (value) - denoms[i];
+                if (ix >= 0 && (denoms[i] <= value)) {
+                    int x2 = denoms[i] + soln.OPT[i][ix];
+                    if (x2 <= target && (1 + soln.OPT[i][ix] < targetWithPrevDenomiation)) {
+                        String temp = soln.optimalChange[i][ix] + denoms[i] + " ";
+                        soln.optimalChange[i][j] = temp;
+                        soln.OPT[i][j] = 1 + soln.OPT[i][ix];
+                    } else {
+                        soln.optimalChange[i][j] = soln.optimalChange[i - 1][j] + " ";
+                        soln.OPT[i][j] = targetWithPrevDenomiation;
+                    }
+                } else {
+                    soln.optimalChange[i][j] = soln.optimalChange[i - 1][j];
+                    soln.OPT[i][j] = targetWithPrevDenomiation;
+                }
+            }
+        }
+        
+        return soln;
+    }
+    public long getNumberOfWays(int N, int[] Coins) 
+    { 
+        // Create the path array to 1 plus the amount 
+        // to stop overflow 
+        int[] ways = new int[(int)N + 1];  
+  
+        // Set the first path to 1 because its 0 and 
+        // there is 1 way to make 0 with 0 coins 
+        ways[0] = 1;  
+  
+         // Go through all of the coins 
+        for (int i = 0; i < Coins.length; i++) { 
+  
+            // Make a comparison to each index value  
+            // of ways with the coin value. 
+            for (int j = 0; j < ways.length; j++) {  
+                if (Coins[i] <= j) { 
+                    
+                    // Update the ways array 
+                    ways[j] += ways[(int)(j - Coins[i])]; 
+                     
+                } 
+                
+            }
+           
+        } 
+  
+        // return the value at the Nth position 
+        // of the ways array.     
+        return ways[(int)N];  
+    } 
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        
+        // TODO code application logic here
+        Assignment2 a = new Assignment2();
+        JFileChooser chooser = new JFileChooser();
+        int returnVal = chooser.showOpenDialog(null);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            System.out.println("You chose to open this file: "
+                    + chooser.getSelectedFile().getAbsolutePath());
+        }
+
+        //get file path to read the file
+        String filePath = chooser.getSelectedFile().getAbsolutePath();
+        BufferedReader reader;
+
+        try {
+            //prompt user for a file
+
+            reader = new BufferedReader(new FileReader(filePath));
+            //read line from file
+            String line = reader.readLine();
+            System.out.println("Denomination "+line);
+            String[] arrOfStr = line.split(" ");
+            int denoms[] = new int[arrOfStr.length];
+
+            //read data from file and transform in to array of denomination
+            for (int i = 0; i < arrOfStr.length; i++) {
+                //System.out.println(arrOfStr[i]);
+                denoms[i] = Integer.parseInt(arrOfStr[i]);
+            }
+            //move to next line in file
+            line = reader.readLine();
+
+            int target = Integer.parseInt(line);
+            System.out.println("Amount: "+target);
+            long startd = System.currentTimeMillis();
+            System.out.println("No. of ways: "+a.getNumberOfWays(target, denoms));
+            long endd = System.currentTimeMillis(); 
+            
+            // finding the time before the operation is executed
+            long start = System.currentTimeMillis();
+            
+            ATM atm = a.findAllPossibleCombinations(target, denoms);
+            
+            // finding the time after the operation is executed
+            long end = System.currentTimeMillis();
+            
+            System.out.println("... No. of possible ways ...");
+            for (int i = 0; i < atm.allPossibleChanges.size(); i++) {
+              System.out.println(atm.allPossibleChanges.get(i).toString());
+            }
+            
+            //write number of different ways to produce that value using the denominations
+            
+           //ATM atms = a.findAllPossibleCombinationDynamic(target, denoms);
+           
+            File f = new File(filePath);
+            try (FileWriter writer = new FileWriter(f.getParent() + "outputR_" + f.getName())) {
+                for (String val : atm.allPossibleChanges) {
+                    writer.write(val + System.lineSeparator());
+                }
+            }
+            try (FileWriter writer2 = new FileWriter(f.getParent() + "outputD_" + f.getName())) {
+                for (String val : atm.allPossibleChanges) {
+                    writer2.write(val + System.lineSeparator());
+                }
+            }
+            System.out.println("No. of milisecond the program spent  : "+(end-start));
+        
+
+        } catch (Exception e) {
+          
+        }
+    }
+    
+
+}
